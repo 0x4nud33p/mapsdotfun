@@ -1,27 +1,43 @@
 import { Radar } from "@/components/Radar";
 import { EvervaultCard } from "@/components/ui/evervault-card";
-import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
-import { TextHoverEffect } from "@/components/ui/text-hover-effect";
+import { FloatingDockDemo } from "@/components/FlotingDock";
+import { FeaturesSectionDemo } from "@/components/Features";
+
 
 export default function Home() {
   return (
-    <main className="relative flex h-screen w-screen bg-black text-white overflow-hidden">
-      {/* Title with higher z-index */}
-      <div className="absolute top-5 left-1/2 -translate-x-1/2 z-50 font-bold hover:cursor-pointer">
-        <HoverBorderGradient className="h-16">
-          <TextHoverEffect text="mapdotfun" duration={4} automatic={true} />
-        </HoverBorderGradient>
+    <main>
+      <div className="flex items-center justify-center h-screen">
+        <Radar
+          heading="MapsDotFun"
+          subHeading="Find the next legit token before it's too late."
+        />
       </div>
+      <div className="flex flex-col lg:flex-row mt-10 w-full max-full mx-auto">
+        {/* Left side — 50% width */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center">
+          <EvervaultCard text="Find the next legit token Address" />
+        </div>
 
-      {/* Left side - Evervault */}
-      <div className="w-1/2 h-full flex items-center justify-center">
-        <EvervaultCard text="Find the next legit token Address" />
-      </div>
-
-      {/* Right side - Radar */}
-      <div className="w-1/2 h-full flex items-center justify-center">
-        <Radar />
+        {/* Right side — 50% width */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center">
+          <FeaturesSectionDemo />
+        </div>
       </div>
     </main>
   );
 }
+
+
+
+{/* <div className="flex-1 flex items-center justify-center">
+  <Radar />
+</div>;
+
+<div className="absolute -bottom-50 left-1/2 transform -translate-x-1/2">
+  <FloatingDockDemo />
+</div>; */}
+
+{/* <div className="flex-1 flex items-center justify-center">
+  <EvervaultCard text="Find the next legit token Address" />
+</div>; */}
