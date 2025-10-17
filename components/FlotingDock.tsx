@@ -7,9 +7,8 @@ import {
   IconBrandX,
   IconDatabaseDollar,
   IconHome,
-  IconNewSection,
-  IconTerminal2,
 } from "@tabler/icons-react";
+import Image from "next/image";
 
 export function FloatingDockDemo() {
   const links = [
@@ -29,7 +28,9 @@ export function FloatingDockDemo() {
     },
     {
       title: "Mapsdotfun",
-      icon: <img src="file.svg" width={20} height={20} alt="Aceternity Logo" />,
+      icon: (
+        <Image src="file.svg" width={20} height={20} alt="Aceternity Logo" />
+      ),
       href: "#",
     },
     {

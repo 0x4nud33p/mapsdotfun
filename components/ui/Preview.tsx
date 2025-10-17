@@ -54,7 +54,7 @@ const Preview = () => {
         </div>
       </div>
 
-      <Radar className="absolute -bottom-12" />
+      <Radar className="absolute -bottom-12" heading={""} subHeading={""} />
       <div className="absolute bottom-0 z-[41] h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
     </div>
   );

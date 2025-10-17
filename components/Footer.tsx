@@ -1,11 +1,9 @@
 import React from "react";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import {
   IconBrandGithub,
   IconBrandLinkedin,
   IconBrandX,
-  IconRocket,
 } from "@tabler/icons-react";
 import FooterGradient from "./ui/footer-gradient";
 import Link from "next/link";

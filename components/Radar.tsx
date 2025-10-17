@@ -33,10 +33,16 @@ const memeCoins = [
   { src: "/icons/image14.png", alt: "Milady13", angle: 345, distance: 300 },
 ];
 
-export const Radar = ({ className, heading, subHeading }: any) => {
+type RadarProps = {
+  className?: string;
+  heading: string;
+  subHeading: string;
+};
+
+export const Radar = ({ className, heading, subHeading }: RadarProps) => {
   const circles = new Array(8).fill(1);
   const [rotation, setRotation] = useState(0);
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     let frame: number;
     const animate = () => {
@@ -62,9 +68,7 @@ export const Radar = ({ className, heading, subHeading }: any) => {
               {heading}
             </h1>
           )}
-          {subHeading && (
-            <TypewriterEffectSmoothDemo />
-          )}
+          {subHeading && <TypewriterEffectSmoothDemo />}
         </div>
       )}
 
@@ -128,7 +132,7 @@ export const Radar = ({ className, heading, subHeading }: any) => {
   );
 };
 
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const Circle = ({ className, idx, ...rest }: any) => (
   <motion.div
     {...rest}
