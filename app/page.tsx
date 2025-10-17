@@ -1,6 +1,6 @@
 import { Radar } from "@/components/Radar";
 import { EvervaultCard } from "@/components/ui/evervault-card";
-import { FloatingDockDemo } from "@/components/FlotingDock";
+// import { FloatingDockDemo } from "@/components/FlotingDock";
 import { FeaturesSectionDemo } from "@/components/Features";
 import Footer from "@/components/Footer";
 import Image from "next/image";
