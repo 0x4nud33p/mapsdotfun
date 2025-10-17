@@ -3,10 +3,10 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui);
-  --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular);
+  /* --font-sans: var(--font-geist-sans, ui-sans-serif, system-ui); */
+  /* --font-mono: var(--font-geist-mono, ui-monospace, SFMono-Regular); */
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
+  --background: rgb(8, 8, 8);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -52,7 +52,7 @@
   body {
     background: var(--background);
     color: var(--foreground);
-    font-family: var(--font-sans);
+    font-family: var(--font-bricolage), sans-serif;
   }
 }
 

@@ -3,15 +3,16 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { twMerge } from "tailwind-merge";
 import { useEffect, useState } from "react";
+import { TypewriterEffectSmoothDemo } from "./Typewriter";
 
 const memeCoins = [
-  { src: "/icons/doge.png", alt: "Dogecoin", angle: 0, distance: 190 },
+  // { src: "/icons/doge.png", alt: "Dogecoin", angle: 0, distance: 190 },
   { src: "/icons/shib.png", alt: "Shiba Inu", angle: 30, distance: 160 },
   { src: "/icons/pepe.png", alt: "Pepe", angle: 60, distance: 210 },
   { src: "/icons/bonk.png", alt: "Bonk", angle: 90, distance: 190 },
   { src: "/icons/floki.png", alt: "Floki", angle: 120, distance: 240 },
   { src: "/icons/turbo.png", alt: "Turbo", angle: 150, distance: 180 },
-  { src: "/icons/babedoge.png", alt: "Baby Doge", angle: 180, distance: 200 },
+  // { src: "/icons/babedoge.png", alt: "Baby Doge", angle: 180, distance: 200 },
   { src: "/icons/kishu.png", alt: "Kishu Inu", angle: 210, distance: 160 },
   { src: "/icons/akita.png", alt: "Akita Inu", angle: 240, distance: 170 },
   { src: "/icons/wojak.png", alt: "Wojak", angle: 270, distance: 220 },
@@ -55,16 +56,14 @@ export const Radar = ({ className, heading, subHeading }: any) => {
     >
       {/* Center text */}
       {(heading || subHeading) && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center text-center space-y-2">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center text-center">
           {heading && (
-            <h1 className="text-black text-4xl font-bold leading-tight">
+            <h1 className="text-white text-4xl font-bold leading-tight mb-[-20px]">
               {heading}
             </h1>
           )}
           {subHeading && (
-            <h2 className="text-black text-lg font-medium max-w-[80%]">
-              {subHeading}
-            </h2>
+            <TypewriterEffectSmoothDemo />
           )}
         </div>
       )}
@@ -75,9 +74,9 @@ export const Radar = ({ className, heading, subHeading }: any) => {
           transform: `rotate(${rotation}deg)`,
           transformOrigin: "center",
         }}
-        className="absolute inset-[-145px] rounded-full z-30"
+        className="absolute inset-[-134px] rounded-full z-30"
       >
-        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,rgba(56,189,248,0.25)_0deg,rgba(56,189,248,0.05)_20deg,transparent_60deg)]" />
+        <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,rgba(45,212,191,0.25)_0deg,rgba(45,212,191,0.05)_20deg,transparent_60deg)]" />
       </motion.div>
 
       {/* Concentric radar rings */}
