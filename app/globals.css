@@ -160,3 +160,48 @@
     background-position: 0 0;
   }
 }
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+.wallet-adapter-button {
+  padding: 0.5rem 1rem !important;
+  border-radius: 0.375rem !important;
+  height: 40px !important;
+  line-height: normal !important;
+  color: black !important;
+  font-weight: 600 !important;
+  transition: background-color 0.2s !important;
+}
+
+.wallet-adapter-dropdown-list {
+  background: oklch(76.5% 0.177 163.223) !important;
+}
+
+.wallet-adapter-dropdown-list:hover {
+  background: oklch(75.5% 0.177 163.223);
+}
+
+.wallet-adapter-dropdown-list,
+.wallet-adapter-modal-wrapper,
+.wallet-adapter-button {
+  background-color: oklch(76.5% 0.177 163.223) !important;
+}
+
+.wallet-adapter-dropdown-list-item:hover,
+.wallet-adapter-modal-button-close,
+.wallet-adapter-button:hover {
+  color: black !important;
+  background-color: oklch(76.5% 0.177 163.223) !important;
+}
+
+.wallet-adapter-modal-button-close svg {
+  fill: black !important;
+}

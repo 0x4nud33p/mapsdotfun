@@ -1,21 +1,24 @@
 import { Radar } from "@/components/Radar";
 import { EvervaultCard } from "@/components/ui/evervault-card";
-// import { FloatingDockDemo } from "@/components/FlotingDock";
 import { FeaturesSectionDemo } from "@/components/Features";
 import Footer from "@/components/Footer";
 import Image from "next/image";
+import WalletWrapper from "@/components/WalletWrapper";
 
 export default function Home() {
+  
   return (
     <main className="relative min-h-screen overflow-hidden">
-      <Image
-        src="/logo.png"
-        alt="logo"
-        width={100}
-        height={100}
-        className="absolute top-4 left-4 z-[9999] hidden sm:block"
-      />
-
+      <div className="flex justify-between items-center w-full p-4 pt-0 absolute top-0 left-0 z-[9999]">
+        <Image
+          src="/logo.png"
+          alt="logo"
+          width={100}
+          height={100}
+          className="hidden sm:block"
+        />
+        <WalletWrapper />
+      </div>
       <section className="flex items-center justify-center h-screen">
         <Radar
           heading="MAPSDOTFUN"
@@ -34,11 +37,6 @@ export default function Home() {
       </section>
 
       <Footer />
-
-      {/* Floating Dock — anchored bottom center */}
-      {/* <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-99">
-        <FloatingDockDemo />
-      </div> */}
     </main>
   );
 }
