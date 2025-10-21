@@ -27,26 +27,14 @@ export default function Page() {
               address: tokenData.address,
               totalSupply: tokenData.supply,
               liquidityPool: "N/A",
-              topHolders: [
-                {
-                  address: tokenData.address,
-                  balance: tokenData.supply * 0.25,
-                  percent: 25,
-                },
-              ],
+              top_100_holders: tokenData.top_100_holders,
+              // mock data currently
               risk: {
                 centralization: "low",
                 liquidity: "moderate",
                 transfers: "normal",
               },
             }}
-            holders={[
-              {
-                address: tokenData.address,
-                balance: tokenData.supply * 0.25,
-                connections: [],
-              },
-            ]}
           />
         </div>
       )}

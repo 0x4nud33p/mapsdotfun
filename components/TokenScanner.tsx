@@ -22,22 +22,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Holder } from "@/store/token-store";
 
 export interface TokenScannerProps {
   tokenMetadata: {
     name: string;
     symbol: string;
     address: string;
-    totalSupply: number;
+    top_100_holders: Holder[];
     liquidityPool?: string;
-    topHolders: { address: string; balance: number; percent: number }[];
     risk: { centralization: string; liquidity: string; transfers: string };
+    totalSupply: number;
   };
-  holders: {
-    address: string;
-    balance: number;
-    connections: string[];
-  }[];
 }
 
 interface Node extends d3.SimulationNodeDatum {
@@ -72,10 +68,7 @@ const getRiskBadge = (status: string) => {
   return "bg-red-500/20 text-red-400 border-red-500/50";
 };
 
-export default function TokenScanner({
-  tokenMetadata,
-  holders,
-}: TokenScannerProps) {
+export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
@@ -134,11 +127,11 @@ export default function TokenScanner({
     const width = dimensions.width;
     const height = dimensions.height;
 
-    const maxBalance = Math.max(...holders.map((h) => h.balance));
+    const maxBalance = Math.max(...tokenMetadata?.top_100_holders?.map((h: { balance: any; }) => h.balance));
     const minRadius = 10;
     const maxRadius = 45;
 
-    const nodes: Node[] = holders.map((holder) => ({
+    const nodes: Node[] = tokenMetadata?.top_100_holders?.map((holder: { address: any; balance: number; connections: any; }) => ({
       id: holder.address,
       balance: holder.balance,
       connections: holder.connections,
@@ -147,9 +140,9 @@ export default function TokenScanner({
     }));
 
     const links: Link[] = [];
-    holders.forEach((holder) => {
-      holder.connections.forEach((conn) => {
-        if (holders.find((h) => h.address === conn)) {
+    tokenMetadata?.top_100_holders.forEach((holder: { connections: any[]; address: any; }) => {
+      holder.connections.forEach((conn: any) => {
+        if (tokenMetadata?.top_100_holders.find((h: { address: any; }) => h.address === conn)) {
           links.push({
             source: holder.address,
             target: conn,
@@ -164,7 +157,7 @@ export default function TokenScanner({
         "link",
         d3
           .forceLink<Node, Link>(links)
-          .id((d) => d.id)
+          .id((d: { id: any; }) => d.id)
           .distance(150)
           .strength(0.3)
       )
@@ -172,7 +165,7 @@ export default function TokenScanner({
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
-        d3.forceCollide<Node>().radius((d) => d.radius + 10)
+        d3.forceCollide<Node>().radius((d: { radius: number; }) => d.radius + 10)
       )
       .force("x", d3.forceX(width / 2).strength(0.05))
       .force("y", d3.forceY(height / 2).strength(0.05));
@@ -224,7 +217,7 @@ export default function TokenScanner({
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.4, 2.5])
-      .on("zoom", (event) => {
+      .on("zoom", (event: { transform: any; }) => {
         g.attr("transform", event.transform);
       });
 
@@ -276,7 +269,7 @@ export default function TokenScanner({
       .join("g")
       .style("cursor", "pointer");
 
-    nodeGroup.each(function (d, i) {
+    nodeGroup.each(function (d: { radius: number; }, i: any) {
       const group = d3.select(this);
 
       group
@@ -304,7 +297,7 @@ export default function TokenScanner({
     });
 
     nodeGroup
-      .on("mouseenter", function (event, d) {
+      .on("mouseenter", function (event: any, d: React.SetStateAction<Node | null>) {
         setHoveredNode(d);
 
         const group = d3.select(this);
@@ -335,14 +328,14 @@ export default function TokenScanner({
         link
           .transition()
           .duration(300)
-          .attr("opacity", (l) => {
+          .attr("opacity", (l: { source: { id: any; }; target: { id: any; }; }) => {
             const source =
               typeof l.source === "object" ? l.source.id : l.source;
             const target =
               typeof l.target === "object" ? l.target.id : l.target;
             return source === d.id || target === d.id ? 0.9 : 0.15;
           })
-          .attr("stroke-width", (l) => {
+          .attr("stroke-width", (l: { source: { id: any; }; target: { id: any; }; }) => {
             const source =
               typeof l.source === "object" ? l.source.id : l.source;
             const target =
@@ -350,7 +343,7 @@ export default function TokenScanner({
             return source === d.id || target === d.id ? 3 : 2;
           });
       })
-      .on("mouseleave", function (event, d) {
+      .on("mouseleave", function (event: any, d: { id: string; radius: number; }) {
         if (!selectedNode || selectedNode.id !== d.id) {
           setHoveredNode(null);
         }
@@ -383,7 +376,7 @@ export default function TokenScanner({
             .attr("stroke-width", 2);
         }
       })
-      .on("click", (event, d) => {
+      .on("click", (event: { stopPropagation: () => void; }, d: React.SetStateAction<Node | null>) => {
         event.stopPropagation();
         setSelectedNode(d);
       });
@@ -400,7 +393,7 @@ export default function TokenScanner({
     });
 
     simulation.on("tick", () => {
-      link.attr("d", (d) => {
+      link.attr("d", (d: { source: Node; target: Node; }) => {
         const source = d.source as Node;
         const target = d.target as Node;
         const dx = target.x! - source.x!;
@@ -409,13 +402,13 @@ export default function TokenScanner({
         return `M${source.x},${source.y}A${dr},${dr} 0 0,1 ${target.x},${target.y}`;
       });
 
-      nodeGroup.attr("transform", (d) => `translate(${d.x},${d.y})`);
+      nodeGroup.attr("transform", (d: { x: any; y: any; }) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [holders, dimensions, selectedNode]);
+  }, [ dimensions, selectedNode]);
 
   const displayNode = hoveredNode || selectedNode;
 
@@ -636,7 +629,7 @@ export default function TokenScanner({
               </div>
 
               <div className="space-y-2">
-                {tokenMetadata.topHolders.slice(0, 5).map((holder, idx) => (
+                {tokenMetadata.topHolders.slice(0, 5).map((holder: { address: React.Key | null | undefined; percent: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; balance: number; }, idx: number) => (
                   <motion.div
                     key={holder.address}
                     initial={{ opacity: 0, x: -20 }}

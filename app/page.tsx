@@ -4,6 +4,7 @@ import { FeaturesSectionDemo } from "@/components/Features";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import WalletWrapper from "@/components/WalletWrapper";
+import NavigateBtn from "@/components/NavigateBtn";
 
 export default function Home() {
   
@@ -25,7 +26,7 @@ export default function Home() {
           subHeading="Find the next legit token before it's too late."
         />
       </section>
-
+      <NavigateBtn />
       <section className="flex flex-col lg:flex-row mt-10 mx-auto w-full">
         <div className="w-full lg:w-1/2 flex items-center justify-center">
           <EvervaultCard text="Find the next legit token Address" />

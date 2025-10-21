@@ -30,7 +30,7 @@ export default function Footer() {
               transparent data.
             </p>
             <div className="mt-8">
-              <Link href="#" className="inline-block">
+              <Link href="/token" className="inline-block">
                 <Button className="bg-emerald-400 text-black hover:bg-emerald-400/90 hover:cursor-pointer">
                   Try Now
                 </Button>

@@ -5,7 +5,7 @@ export interface TokenMetadata {
     name: string;
     symbol: string;
     supply: number;
-    top_100_holders: number;
+    top_100_holders: Holder[];
     address: string;
     decimals?: number;
     image?: string;
@@ -17,6 +17,12 @@ export interface TokenState {
     loading: boolean;
     error: string | null;
     recentSearches: string[];
+}
+
+export interface Holder {
+    address: string;
+    balance: number;
+    connections: string[];
 }
 
 export interface TokenActions {
@@ -55,7 +61,6 @@ export const useTokenStore = create<TokenState & TokenActions>()(
                     try {
                         set({ loading: true, error: null });
 
-                        // Call Helius RPC
                         const response = await fetch(
                             `https://mainnet.helius-rpc.com/?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`,
                             {
@@ -64,20 +69,48 @@ export const useTokenStore = create<TokenState & TokenActions>()(
                                 body: JSON.stringify({
                                     jsonrpc: "2.0",
                                     id: "1",
-                                    method: "getTokenLargestAccounts",
-                                    params: [address],
+                                    method: "getProgramAccountsV2",
+                                    params: [
+                                        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+                                        {
+                                            encoding: "jsonParsed",
+                                            filters: [
+                                                { dataSize: 165 },
+                                                {
+                                                    memcmp: {
+                                                        offset: 0,
+                                                        bytes: address,
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    ],
                                 }),
                             }
                         );
 
-                        console.log("response", response);
+                        console.log("Helius response:", response);
 
-                        if (!response.ok) throw new Error(`RPC request failed: ${response.statusText}`);
-                        const { result } = await response.json();
+                        if (!response.ok)
+                            throw new Error(`RPC request failed: ${response.statusText}`);
 
-                        if (!result?.value?.length) throw new Error("No holders found for this token");
+                        const json = await response.json();
+                        console.log("Helius JSON:", json);
 
-                        // Combine metadata + holders
+                        const result = json?.result?.accounts || [];
+
+                        console.log("Parsed accounts:", result);
+
+                        if (!result.length) throw new Error("No holders found for this token");
+
+                        const holders = result
+                            .map((acc: any) => ({
+                                owner: acc.account.data.parsed.info.owner,
+                                amount: acc.account.data.parsed.info.tokenAmount.uiAmount || 0,
+                            }))
+                            .sort((a: { amount: number; }, b: { amount: number; }) => b.amount - a.amount)
+                            .slice(0, 100);
+
                         const metaRes = await fetch(
                             `https://api.helius.xyz/v0/token-metadata?api-key=${process.env.NEXT_PUBLIC_HELIUS_API_KEY}`,
                             {
@@ -87,20 +120,32 @@ export const useTokenStore = create<TokenState & TokenActions>()(
                             }
                         );
 
+                        console.log("Metadata response:", metaRes);
+
+                        if (!metaRes.ok)
+                            throw new Error(`Metadata request failed: ${metaRes.statusText}`);
+
                         const metaJson = await metaRes.json();
+
+                        console.log("Metadata JSON:", metaJson);
                         const meta = metaJson?.[0] ?? {};
 
                         const tokenData: TokenMetadata = {
                             name: meta?.onChainMetadata?.metadata?.data?.name || "Unknown",
                             symbol: meta?.onChainMetadata?.metadata?.data?.symbol || "N/A",
-                            supply: result.value.reduce((sum: number, acc: any) => sum + (acc.uiAmount || 0), 0),
-                            top_100_holders: result.value.length,
+                            supply: holders.reduce((sum: number, h: any) => sum + h.amount, 0),
+                            top_100_holders: holders,
                             address,
                             decimals: meta?.onChainMetadata?.metadata?.data?.decimals ?? 0,
                             image: meta?.offChainMetadata?.metadata?.image || null,
                         };
 
-                        set({ tokenData, loading: false, mintAddress: address });
+                        set({
+                            tokenData,
+                            loading: false,
+                            mintAddress: address,
+                        });
+
                         get().addToRecentSearches(address);
                     } catch (err: any) {
                         console.error("Error fetching token data:", err);
