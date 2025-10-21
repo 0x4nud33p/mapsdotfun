@@ -461,56 +461,6 @@ export default function TokenScanner({
         />
       ))}
 
-      {/* NavBar  */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="relative z-10 border-b border-gray-500 bg-[#020617]/80 backdrop-blur-xl"
-      >
-        <div className="flex items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <Globe className="w-6 h-6 text-cyan-400" />
-            <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-violet-500">
-              MapsDotFun
-            </h1>
-            <div className="flex items-center gap-2 ml-4 px-3 py-1 rounded-full bg-cyan-500/10 border border-gray-500">
-              <Wifi className="w-3 h-3 text-cyan-400 animate-pulse" />
-              <span className="text-xs text-cyan-300">Solana Mainnet</span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="relative w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-cyan-400/60" />
-              <Input
-                type="text"
-                placeholder="Scan wallet address..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-[#0a192f]/60 border-gray-500 text-gray-200 placeholder:text-gray-500 focus:border-cyan-400 focus:ring-cyan-400/50"
-              />
-            </div>
-
-            <div className="flex gap-2">
-              {["1h", "24h", "7d"].map((tf) => (
-                <button
-                  key={tf}
-                  onClick={() => setTimeframe(tf)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                    timeframe === tf
-                      ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/50"
-                      : "bg-[#0a192f]/60 text-gray-400 border border-gray-700/50 hover:border-gray-500"
-                  }`}
-                >
-                  {tf}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </motion.div> */}
-
       <div className="flex-1 flex relative">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -790,28 +740,3 @@ export default function TokenScanner({
     </div>
   );
 }
-
-
-//  <motion.div
-//    initial={{ opacity: 0, y: 20 }}
-//    animate={{ opacity: 1, y: 0 }}
-//    transition={{ duration: 0.8, delay: 0.5 }}
-//    className="relative z-10 border-none bg-transparent backdrop-blur-xl px-6 py-3"
-//  >
-//    <div className="flex items-center justify-between text-xs">
-//      <div className="flex items-center gap-6">
-//        <div className="flex items-center gap-2">
-//          <Clock className="w-3 h-3 text-cyan-400" />
-//          <span className="text-gray-400">
-//            Last scan: <span className="text-cyan-400">5 mins ago</span>
-//          </span>
-//        </div>
-//        <div className="flex items-center gap-2">
-//          <Activity className="w-3 h-3 text-green-400 animate-pulse" />
-//          <span className="text-gray-400">
-//            Status: <span className="text-green-400">Syncing data...</span>
-//          </span>
-//        </div>
-//      </div>
-//    </div>
-//  </motion.div>;
