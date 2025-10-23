@@ -19,6 +19,7 @@ import {
   Clock,
   Wifi,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -628,7 +629,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                 </h3>
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 {tokenMetadata.topHolders.slice(0, 5).map((holder: { address: React.Key | null | undefined; percent: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; balance: number; }, idx: number) => (
                   <motion.div
                     key={holder.address}
@@ -666,7 +667,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                     </Card>
                   </motion.div>
                 ))}
-              </div>
+              </div> */}
             </motion.div>
 
             <AnimatePresence mode="wait">

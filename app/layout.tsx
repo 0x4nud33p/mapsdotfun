@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { SolanaProvider } from "@/components/providers/wallet-provider";
@@ -9,7 +10,7 @@ import { StoreProvider } from "@/components/providers/token-store-provider";
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Mapsdotfun - Solana Token Explorer",
+  title: "mapsdotfun - solana token explorer",
   description: "Explore Solana tokens with real-time data and analytics",
 };
 
@@ -24,7 +25,10 @@ export default function RootLayout({
         <QueryProvider>
           <SolanaProvider>
             <TooltipProvider>
-              <StoreProvider>{children}</StoreProvider>
+              <StoreProvider>
+                {children}
+                <Toaster />
+              </StoreProvider>
             </TooltipProvider>
           </SolanaProvider>
         </QueryProvider>

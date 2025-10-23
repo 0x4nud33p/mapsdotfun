@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
@@ -89,10 +90,10 @@ export const useTokenStore = create<TokenState & TokenActions>()(
                             }
                         );
 
-                        console.log("Helius response:", response);
-
-                        if (!response.ok)
+                        if (!response.ok) {
+                            toast("Failed to fetch token data");
                             throw new Error(`RPC request failed: ${response.statusText}`);
+                        }
 
                         const json = await response.json();
                         console.log("Helius JSON:", json);
@@ -101,14 +102,18 @@ export const useTokenStore = create<TokenState & TokenActions>()(
 
                         console.log("Parsed accounts:", result);
 
-                        if (!result.length) throw new Error("No holders found for this token");
+                        if (!result.length) {
+                            toast("No holders found for this token.");
+                            return;
+                        }
 
                         const holders = result
                             .map((acc: any) => ({
-                                owner: acc.account.data.parsed.info.owner,
-                                amount: acc.account.data.parsed.info.tokenAmount.uiAmount || 0,
+                                address: acc.account.data.parsed.info.owner,
+                                balance: acc.account.data.parsed.info.tokenAmount.uiAmount || 0,
+                                connections: [], 
                             }))
-                            .sort((a: { amount: number; }, b: { amount: number; }) => b.amount - a.amount)
+                            .sort((a, b) => b.balance - a.balance)
                             .slice(0, 100);
 
                         const metaRes = await fetch(
@@ -133,7 +138,7 @@ export const useTokenStore = create<TokenState & TokenActions>()(
                         const tokenData: TokenMetadata = {
                             name: meta?.onChainMetadata?.metadata?.data?.name || "Unknown",
                             symbol: meta?.onChainMetadata?.metadata?.data?.symbol || "N/A",
-                            supply: holders.reduce((sum: number, h: any) => sum + h.amount, 0),
+                            supply: holders.reduce((sum: number, h: any) => sum + h.balance, 0),
                             top_100_holders: holders,
                             address,
                             decimals: meta?.onChainMetadata?.metadata?.data?.decimals ?? 0,
