@@ -466,7 +466,7 @@ export default function TokenMap({ tokenMetadata, holders }: TokenMapProps) {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-400">Total Supply</span>
                 <span className="text-sm font-bold text-white">
-                  {tokenMetadata.totalSupply.toLocaleString()}
+                  {tokenMetadata.totalSupply}
                 </span>
               </div>
               {tokenMetadata.liquidityPool && (

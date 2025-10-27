@@ -25,9 +25,11 @@ export default function Page() {
               name: tokenData.name,
               symbol: tokenData.symbol,
               address: tokenData.address,
-              totalSupply: tokenData.supply,
+              totalSupply: tokenData.totalSupply,
               liquidityPool: "N/A",
               top_100_holders: tokenData.top_100_holders,
+              logoURI: tokenData.logoURI,
+              decimals: tokenData.decimals,
               // mock data currently
               risk: {
                 centralization: "low",

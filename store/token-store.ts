@@ -5,11 +5,11 @@ import { devtools, persist } from 'zustand/middleware';
 export interface TokenMetadata {
     name: string;
     symbol: string;
-    supply: number;
+    totalSupply: number;
     top_100_holders: Holder[];
     address: string;
-    decimals?: number;
-    image?: string;
+    decimals: number;
+    logoURI: string;
 }
 
 export interface TokenState {
@@ -125,24 +125,20 @@ export const useTokenStore = create<TokenState & TokenActions>()(
                             }
                         );
 
-                        console.log("Metadata response:", metaRes);
-
                         if (!metaRes.ok)
                             throw new Error(`Metadata request failed: ${metaRes.statusText}`);
 
                         const metaJson = await metaRes.json();
-
-                        console.log("Metadata JSON:", metaJson);
                         const meta = metaJson?.[0] ?? {};
 
                         const tokenData: TokenMetadata = {
                             name: meta?.onChainMetadata?.metadata?.data?.name || "Unknown",
                             symbol: meta?.onChainMetadata?.metadata?.data?.symbol || "N/A",
-                            supply: holders.reduce((sum: number, h: any) => sum + h.balance, 0),
+                            totalSupply: meta?.onChainAccountInfo.accountInfo.data.parsed.info.supply || 0,
                             top_100_holders: holders,
                             address,
                             decimals: meta?.onChainMetadata?.metadata?.data?.decimals ?? 0,
-                            image: meta?.offChainMetadata?.metadata?.image || null,
+                            logoURI: meta?.legacyMetadata?.logoURI || "",
                         };
 
                         set({

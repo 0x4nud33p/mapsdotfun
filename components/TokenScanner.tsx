@@ -24,6 +24,9 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Holder } from "@/store/token-store";
+import Image from "next/image";
+import { formatNumber } from "@/utils/formatnum";
+
 
 export interface TokenScannerProps {
   tokenMetadata: {
@@ -34,6 +37,8 @@ export interface TokenScannerProps {
     liquidityPool?: string;
     risk: { centralization: string; liquidity: string; transfers: string };
     totalSupply: number;
+    logoURI: string;
+    decimals: number;
   };
 }
 
@@ -42,12 +47,14 @@ interface Node extends d3.SimulationNodeDatum {
   balance: number;
   connections: string[];
   radius: number;
+  cluster: string;
 }
 
 interface Link extends d3.SimulationLinkDatum<Node> {
   source: Node | string;
   target: Node | string;
 }
+
 
 const shortenAddress = (address: string) => {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -69,6 +76,20 @@ const getRiskBadge = (status: string) => {
   return "bg-red-500/20 text-red-400 border-red-500/50";
 };
 
+
+const clusterId = (balance: number) => {
+  if (balance > 1_000_000_000) return "whales";
+  if (balance > 10_000_000) return "big_holders";
+  if (balance > 1_000_000) return "mid_holders";
+  return "small_holders";
+};
+
+const clusterColors = d3
+  .scaleOrdinal<string>()
+  .domain(["whales", "big_holders", "mid_holders", "small_holders"])
+  .range(["#f87171", "#facc15", "#4ade80", "#60a5fa"]); 
+
+
 export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -80,6 +101,11 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
   const [particles, setParticles] = useState<
     Array<{ x: number; y: number; delay: number }>
   >([]);
+
+  const selectedNodeRef = useRef<Node | null>(null);
+  useEffect(() => {
+    selectedNodeRef.current = selectedNode;
+  }, [selectedNode]);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -119,7 +145,12 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
   };
 
   useEffect(() => {
-    if (!svgRef.current || dimensions.width === 0 || dimensions.height === 0)
+    if (
+      !svgRef.current ||
+      dimensions.width === 0 ||
+      dimensions.height === 0 ||
+      !tokenMetadata?.top_100_holders
+    )
       return;
 
     const svg = d3.select(svgRef.current);
@@ -128,22 +159,37 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
     const width = dimensions.width;
     const height = dimensions.height;
 
-    const maxBalance = Math.max(...tokenMetadata?.top_100_holders?.map((h: { balance: any; }) => h.balance));
+    const maxBalance =
+      d3.max(tokenMetadata.top_100_holders, (h) => h.balance) || 0;
     const minRadius = 10;
     const maxRadius = 45;
+    const radiusScale = d3
+      .scaleSqrt()
+      .domain([0, maxBalance])
+      .range([minRadius, maxRadius]);
 
-    const nodes: Node[] = tokenMetadata?.top_100_holders?.map((holder: { address: any; balance: number; connections: any; }) => ({
+    const clusterCenters: Record<string, { x: number; y: number }> = {
+      whales: { x: width * 0.3, y: height * 0.3 },
+      big_holders: { x: width * 0.7, y: height * 0.3 },
+      mid_holders: { x: width * 0.3, y: height * 0.7 },
+      small_holders: { x: width * 0.7, y: height * 0.7 },
+    };
+
+    const nodes: Node[] = tokenMetadata.top_100_holders.map((holder) => ({
       id: holder.address,
       balance: holder.balance,
       connections: holder.connections,
-      radius:
-        minRadius + (holder.balance / maxBalance) * (maxRadius - minRadius),
+      radius: radiusScale(holder.balance),
+      cluster: clusterId(holder.balance),
     }));
 
     const links: Link[] = [];
-    tokenMetadata?.top_100_holders.forEach((holder: { connections: any[]; address: any; }) => {
-      holder.connections.forEach((conn: any) => {
-        if (tokenMetadata?.top_100_holders.find((h: { address: any; }) => h.address === conn)) {
+    const holderSet = new Set(
+      tokenMetadata.top_100_holders.map((h) => h.address)
+    );
+    tokenMetadata.top_100_holders.forEach((holder) => {
+      holder.connections.forEach((conn) => {
+        if (holderSet.has(conn)) {
           links.push({
             source: holder.address,
             target: conn,
@@ -158,7 +204,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
         "link",
         d3
           .forceLink<Node, Link>(links)
-          .id((d: { id: any; }) => d.id)
+          .id((d) => d.id)
           .distance(150)
           .strength(0.3)
       )
@@ -166,10 +212,10 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force(
         "collision",
-        d3.forceCollide<Node>().radius((d: { radius: number; }) => d.radius + 10)
+        d3.forceCollide<Node>().radius((d) => d.radius + 10)
       )
-      .force("x", d3.forceX(width / 2).strength(0.05))
-      .force("y", d3.forceY(height / 2).strength(0.05));
+      .force("x", d3.forceX((d) => clusterCenters[d.cluster].x).strength(0.1))
+      .force("y", d3.forceY((d) => clusterCenters[d.cluster].y).strength(0.1));
 
     const defs = svg.append("defs");
 
@@ -177,19 +223,16 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
       .append("linearGradient")
       .attr("id", "link-gradient")
       .attr("gradientUnits", "userSpaceOnUse");
-
     linkGradient
       .append("stop")
       .attr("offset", "0%")
       .attr("stop-color", "#00ffff")
       .attr("stop-opacity", 0);
-
     linkGradient
       .append("stop")
       .attr("offset", "50%")
       .attr("stop-color", "#00ffff")
       .attr("stop-opacity", 0.6);
-
     linkGradient
       .append("stop")
       .attr("offset", "100%")
@@ -203,29 +246,24 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
       .attr("y", "-50%")
       .attr("width", "200%")
       .attr("height", "200%");
-
     glowFilter
       .append("feGaussianBlur")
       .attr("stdDeviation", "4")
       .attr("result", "coloredBlur");
-
     const feMerge = glowFilter.append("feMerge");
     feMerge.append("feMergeNode").attr("in", "coloredBlur");
     feMerge.append("feMergeNode").attr("in", "SourceGraphic");
 
     const g = svg.append("g");
-
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.4, 2.5])
-      .on("zoom", (event: { transform: any; }) => {
+      .on("zoom", (event) => {
         g.attr("transform", event.transform);
       });
-
     svg.call(zoom);
 
     const linkGroup = g.append("g").attr("class", "links");
-
     const link = linkGroup
       .selectAll("path")
       .data(links)
@@ -235,33 +273,6 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
       .attr("fill", "none")
       .attr("opacity", 0.4);
 
-    nodes.forEach((node, i) => {
-      const nodeGradient = defs
-        .append("radialGradient")
-        .attr("id", `node-gradient-${i}`);
-
-      const colors = [
-        { inner: "#00ffff", outer: "#0891b2" },
-        { inner: "#ff00ff", outer: "#c026d3" },
-        { inner: "#9d4edd", outer: "#6d28d9" },
-        { inner: "#a3e635", outer: "#65a30d" },
-      ];
-
-      const colorSet = colors[i % colors.length];
-
-      nodeGradient
-        .append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", colorSet.inner)
-        .attr("stop-opacity", 1);
-
-      nodeGradient
-        .append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", colorSet.outer)
-        .attr("stop-opacity", 0.7);
-    });
-
     const nodeGroup = g
       .append("g")
       .attr("class", "nodes")
@@ -270,15 +281,16 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
       .join("g")
       .style("cursor", "pointer");
 
-    nodeGroup.each(function (d: { radius: number; }, i: any) {
+    nodeGroup.each(function (d: Node) {
       const group = d3.select(this);
+      const color = clusterColors(d.cluster);
 
       group
         .append("circle")
         .attr("class", "glow-ring")
         .attr("r", d.radius + 8)
         .attr("fill", "none")
-        .attr("stroke", `url(#node-gradient-${i})`)
+        .attr("stroke", color) // Use cluster color
         .attr("stroke-width", 2)
         .attr("opacity", 0);
 
@@ -286,7 +298,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
         .append("circle")
         .attr("class", "main-node")
         .attr("r", d.radius)
-        .attr("fill", `url(#node-gradient-${i})`)
+        .attr("fill", color) // Use cluster color
         .attr("filter", "url(#glow)");
 
       group
@@ -298,18 +310,16 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
     });
 
     nodeGroup
-      .on("mouseenter", function (event: any, d: React.SetStateAction<Node | null>) {
+      .on("mouseenter", function (event: any, d: Node) {
         setHoveredNode(d);
 
         const group = d3.select(this);
-
         group
           .select(".glow-ring")
           .transition()
           .duration(300)
           .attr("r", d.radius + 15)
           .attr("opacity", 0.8);
-
         group
           .select(".main-node")
           .transition()
@@ -317,7 +327,6 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
           .attr("r", d.radius * 1.15);
 
         const connectedIds = new Set([d.id, ...d.connections]);
-
         nodeGroup
           .selectAll<SVGGElement, Node>("g")
           .transition()
@@ -325,46 +334,44 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
           .attr("opacity", (node: Node) =>
             connectedIds.has(node.id) ? 1 : 0.3
           );
-
         link
           .transition()
           .duration(300)
-          .attr("opacity", (l: { source: { id: any; }; target: { id: any; }; }) => {
-            const source =
+          .attr("opacity", (l: any) => {
+            const sourceId =
               typeof l.source === "object" ? l.source.id : l.source;
-            const target =
+            const targetId =
               typeof l.target === "object" ? l.target.id : l.target;
-            return source === d.id || target === d.id ? 0.9 : 0.15;
+            return sourceId === d.id || targetId === d.id ? 0.9 : 0.15;
           })
-          .attr("stroke-width", (l: { source: { id: any; }; target: { id: any; }; }) => {
-            const source =
+          .attr("stroke-width", (l: any) => {
+            const sourceId =
               typeof l.source === "object" ? l.source.id : l.source;
-            const target =
+            const targetId =
               typeof l.target === "object" ? l.target.id : l.target;
-            return source === d.id || target === d.id ? 3 : 2;
+            return sourceId === d.id || targetId === d.id ? 3 : 2;
           });
       })
-      .on("mouseleave", function (event: any, d: { id: string; radius: number; }) {
-        if (!selectedNode || selectedNode.id !== d.id) {
+      .on("mouseleave", function (event: any, d: Node) {
+        if (!selectedNodeRef.current || selectedNodeRef.current.id !== d.id) {
           setHoveredNode(null);
         }
 
         const group = d3.select(this);
-
         group
           .select(".glow-ring")
           .transition()
           .duration(300)
           .attr("r", d.radius + 8)
           .attr("opacity", 0);
-
         group
           .select(".main-node")
           .transition()
           .duration(300)
           .attr("r", d.radius);
 
-        if (!selectedNode) {
+        // Use the ref here too
+        if (!selectedNodeRef.current) {
           nodeGroup
             .selectAll("g")
             .transition()
@@ -377,7 +384,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
             .attr("stroke-width", 2);
         }
       })
-      .on("click", (event: { stopPropagation: () => void; }, d: React.SetStateAction<Node | null>) => {
+      .on("click", (event: { stopPropagation: () => void }, d: Node) => {
         event.stopPropagation();
         setSelectedNode(d);
       });
@@ -394,7 +401,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
     });
 
     simulation.on("tick", () => {
-      link.attr("d", (d: { source: Node; target: Node; }) => {
+      link.attr("d", (d: any) => {
         const source = d.source as Node;
         const target = d.target as Node;
         const dx = target.x! - source.x!;
@@ -402,14 +409,13 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
         const dr = Math.sqrt(dx * dx + dy * dy) * 1.5;
         return `M${source.x},${source.y}A${dr},${dr} 0 0,1 ${target.x},${target.y}`;
       });
-
-      nodeGroup.attr("transform", (d: { x: any; y: any; }) => `translate(${d.x},${d.y})`);
+      nodeGroup.attr("transform", (d: any) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [ dimensions, selectedNode]);
+  }, [dimensions, tokenMetadata]); 
 
   const displayNode = hoveredNode || selectedNode;
 
@@ -420,10 +426,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
     >
       <motion.div
         className="absolute inset-0 pointer-events-none"
-        style={{
-          x: springX,
-          y: springY,
-        }}
+        style={{ x: springX, y: springY }}
       >
         <div
           className="absolute inset-0"
@@ -439,7 +442,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
       {particles.map((particle, i) => (
         <motion.div
           key={i}
-          className="absolute w-1 h-1 rounded-full bg-black"
+          className="absolute w-1 h-1 rounded-full bg-cyan-900"
           initial={{ x: `${particle.x}%`, y: `${particle.y}%`, opacity: 0 }}
           animate={{
             x: [`${particle.x}%`, `${particle.x + 10}%`, `${particle.x}%`],
@@ -493,7 +496,9 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                     <div>
                       <div className="text-xs text-gray-400">Holdings</div>
                       <div className="text-lg font-bold text-white">
-                        {(displayNode.balance / 1000000).toFixed(2)}M
+                        {formatNumber(
+                          displayNode.balance / 10 ** tokenMetadata.decimals
+                        )}
                       </div>
                     </div>
                     <div>
@@ -527,6 +532,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
           className="w-[420px] bg-black backdrop-blur-xl border-none"
         >
           <div className="p-6 space-y-6 overflow-y-auto max-h-screen scrollbar-hide">
+            {/* Token Info Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -536,8 +542,20 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
               <div className="absolute -top-2 -left-2 w-full h-full bg-black rounded-xl blur-xl" />
               <Card className="relative bg-black border-gray-500 p-5">
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-green-600 flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                    {tokenMetadata.symbol.charAt(0)}
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                    {tokenMetadata.logoURI ? (
+                      <Image
+                        src={tokenMetadata.logoURI}
+                        alt={tokenMetadata.symbol}
+                        width={48}
+                        height={48}
+                        className="rounded-xl object-cover"
+                      />
+                    ) : (
+                      <span className="text-3xl">
+                        {tokenMetadata.symbol.charAt(0)}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1">
                     <h2 className="text-xl font-bold text-white mb-1">
@@ -556,7 +574,10 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-gray-400">Total Supply</span>
                     <span className="text-sm font-bold text-white">
-                      {(tokenMetadata.totalSupply / 1000000).toFixed(0)}M
+                      {formatNumber(
+                        tokenMetadata?.totalSupply /
+                          10 ** tokenMetadata.decimals
+                      )}
                     </span>
                   </div>
                 </div>
@@ -574,7 +595,6 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                   Risk Signals
                 </h3>
               </div>
-
               <Card className="bg-black border-gray-500 p-4">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -628,46 +648,55 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                   Top Holders
                 </h3>
               </div>
+              <div className="space-y-2">
+                {tokenMetadata.top_100_holders
+                  .slice(0, 5)
+                  .map((holder: Holder, idx: number) => {
+                    const percent =
+                      (holder.balance / tokenMetadata.totalSupply) * 100;
+                    const displayBalance =
+                      holder.balance / 10 ** tokenMetadata.decimals;
 
-              {/* <div className="space-y-2">
-                {tokenMetadata.topHolders.slice(0, 5).map((holder: { address: React.Key | null | undefined; percent: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined; balance: number; }, idx: number) => (
-                  <motion.div
-                    key={holder.address}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.9 + idx * 0.1 }}
-                  >
-                    <Card className="bg-black border-gray-500 p-3 hover:border-gray-400 transition-all">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-mono text-gray-400">
-                          {shortenAddress(holder.address)}
-                        </span>
-                        <span className="text-xs font-bold text-cyan-400">
-                          {holder.percent}%
-                        </span>
-                      </div>
+                    return (
+                      <motion.div
+                        key={holder.address}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.9 + idx * 0.1 }}
+                      >
+                        <Card className="bg-black border-gray-500 p-3 hover:border-gray-400 transition-all">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-mono text-gray-400">
+                              {shortenAddress(holder.address)}
+                            </span>
+                            <span className="text-xs font-bold text-cyan-400">
+                              {percent.toFixed(2)}%
+                            </span>
+                          </div>
 
-                      <div className="relative h-2 bg-[#020617] rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${holder.percent}%` }}
-                          transition={{ duration: 1, delay: 1 + idx * 0.1 }}
-                          className={`absolute inset-y-0 left-0 bg-gradient-to-r ${getRiskColor(
-                            "low"
-                          )} rounded-full`}
-                          style={{
-                            boxShadow: "0 0 10px rgba(0, 255, 255, 0.5)",
-                          }}
-                        />
-                      </div>
+                          <div className="relative h-2 bg-[#020617] rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${percent}%` }}
+                              transition={{ duration: 1, delay: 1 + idx * 0.1 }}
+                              className={`absolute inset-y-0 left-0 bg-gradient-to-r ${getRiskColor(
+                                "low"
+                              )} rounded-full`}
+                              style={{
+                                boxShadow: "0 0 10px rgba(0, 255, 255, 0.5)",
+                              }}
+                            />
+                          </div>
 
-                      <div className="text-xs text-gray-500 mt-2">
-                        {(holder.balance / 1000000).toFixed(2)}M tokens
-                      </div>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div> */}
+                          <div className="text-xs text-gray-500 mt-2">
+                            {formatNumber(displayBalance)}{" "}
+                            {tokenMetadata.symbol}
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+              </div>
             </motion.div>
 
             <AnimatePresence mode="wait">
@@ -704,7 +733,10 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                             Balance
                           </div>
                           <div className="text-lg font-bold text-white">
-                            {(selectedNode.balance / 1000000).toFixed(2)}M
+                            {formatNumber(
+                              selectedNode.balance /
+                                10 ** tokenMetadata.decimals
+                            )}
                           </div>
                         </div>
                         <div>
