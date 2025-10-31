@@ -594,6 +594,7 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                 <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wide">
                   Risk Signals
                 </h3>
+                <p className="text-sm text-emerald-200">coming soon!</p>
               </div>
               <Card className="bg-black border-gray-500 p-4">
                 <div className="space-y-3">
@@ -601,37 +602,37 @@ export default function TokenScanner({ tokenMetadata }: TokenScannerProps) {
                     <span className="text-sm text-gray-300">
                       Centralization
                     </span>
-                    <Badge
+                    {/* <Badge
                       className={`${getRiskBadge(
                         tokenMetadata.risk.centralization
                       )} uppercase text-xs`}
                     >
                       {tokenMetadata.risk.centralization}
-                    </Badge>
+                    </Badge> */}
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-300">
                       Liquidity Lock
                     </span>
-                    <Badge
+                    {/* <Badge
                       className={`${getRiskBadge(
                         tokenMetadata.risk.liquidity
                       )} uppercase text-xs`}
                     >
                       {tokenMetadata.risk.liquidity}
-                    </Badge>
+                    </Badge> */}
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-300">
                       Transfer Spikes
                     </span>
-                    <Badge
+                    {/* <Badge
                       className={`${getRiskBadge(
                         tokenMetadata.risk.transfers
                       )} uppercase text-xs`}
                     >
                       {tokenMetadata.risk.transfers}
-                    </Badge>
+                    </Badge> */}
                   </div>
                 </div>
               </Card>
